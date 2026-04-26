@@ -1,0 +1,48 @@
+{
+  "languages": {
+    "Nix": {
+      "tab_size": 2,
+      "language_servers": ["nixd", "!nil"],
+      "formatter": {
+        "external": {
+          "command": "alejandra",
+          "arguments": ["--quiet"]
+        }
+      }
+    },
+    "Rust": {
+      "language_servers": ["rust-analyzer"],
+      "format_on_save": "on"
+    },
+    "Svelte": {
+      "language_servers": ["svelte-language-server"],
+      "formatter": "prettier"
+    }
+  },
+  "lsp": {
+    "rust-analyzer": {
+      "initialization_options": {
+        "checkOnSave": true,
+        "check": {
+          "command": "clippy"
+        },
+        "binary": {
+          "path": "rust-analyzer",
+          "arguments": []
+        }
+      }
+    },
+    "eslint": {
+      "binary": { "path": "eslint" },
+      "initialization_options": {
+        "workingDirectory": { "mode": "location" }
+      }
+    },
+    "svelte-language-server": {
+      "binary": {
+        "path": "svelteserver",
+        "arguments": ["--stdio"]
+      }
+    }
+  }
+}
