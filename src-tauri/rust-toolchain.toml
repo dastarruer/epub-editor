@@ -1,4 +1,4 @@
 [toolchain]
-channel = "stable"
+channel = "1.88.0"                                              # Necessary for the latest version of rbook
 components = ["rust-analyzer", "clippy", "rustfmt", "rust-src"]
 profile = "minimal"
