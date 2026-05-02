@@ -17,6 +17,18 @@ cd frontend
 pnpm i
 ```
 
+Then, put a (valid) `test.epub` file in the root of the project for testing purposes:
+
+```text
+.
+├── flake.lock
+├── flake.nix
+├── frontend
+├── README.md
+├── src-tauri
+└── test.epub
+```
+
 Finally, from the root of the project, run the following to serve the app:
 
 ```sh
