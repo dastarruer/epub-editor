@@ -21,26 +21,31 @@
   },
   "lsp": {
     "rust-analyzer": {
+      "binary": {
+        "ignore_system_version": false,
+        "path": "rust-analyzer",
+        "arguments": []
+      },
       "initialization_options": {
         "checkOnSave": true,
         "check": {
           "command": "clippy"
-        },
-        "binary": {
-          "path": "rust-analyzer",
-          "arguments": []
         }
       }
     },
     "eslint": {
-      "binary": { "path": "eslint" },
+      "binary": {
+        "ignore_system_version": false,
+        "path": "frontend/node_modules/.bin/eslint"
+      },
       "initialization_options": {
         "workingDirectory": { "mode": "location" }
       }
     },
     "svelte-language-server": {
       "binary": {
-        "path": "svelteserver",
+        "ignore_system_version": false,
+        "path": "frontend/node_modules/.bin/svelteserver",
         "arguments": ["--stdio"]
       }
     }
