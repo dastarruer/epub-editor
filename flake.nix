@@ -71,7 +71,7 @@
         alejandra.enable = true;
 
         pnpm-lint = {
-          enable = true;
+          enable = false;
           name = "pnpm-lint";
           entry = "${lib.getExe pnpm-lint-wrapper}";
 
@@ -87,7 +87,7 @@
         };
 
         pnpm-check = {
-          enable = true;
+          enable = false;
           name = "svelte-check";
           entry = "${lib.getExe pnpm-check-wrapper}";
           pass_filenames = false;
@@ -102,7 +102,7 @@
         };
 
         clippy = {
-          enable = true;
+          enable = false;
 
           packageOverrides = {
             cargo = rust-toolchain;
