@@ -180,7 +180,7 @@
 
       shellHook = ''
         # Install pre-commit hooks in the shell hook
-        ${pre-commit-check}
+        ${pre-commit-check.shellHook}
 
         # TODO: Move this list of packages to a variable
         export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath (with pkgs; [
