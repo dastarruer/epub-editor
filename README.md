@@ -32,5 +32,6 @@ Then, put a (valid) `test.epub` file in the root of the project for testing purp
 Finally, from the root of the project, run the following to serve the app:
 
 ```sh
-cargo tauri dev
+# App runs relative to src-tauri/, not the root of the project
+cargo tauri dev -- ../test.epub
 ```
