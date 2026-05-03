@@ -8,6 +8,7 @@
 	}
 
 	let metadata = invoke<Metadata>('read_epub_metadata');
+	let content = invoke<string>('get_epub_content');
 </script>
 
 <h1>EPUB Metadata</h1>
@@ -20,4 +21,11 @@
 	<p><strong>Creators:</strong> {metadata.creators.join(', ')}</p>
 {:catch error}
 	<p>Error: {error}</p>
+{/await}
+
+{#await content}
+    <p>Loading content...</p>
+{:then html}
+    <!-- Use @html only if you trust the source, as EPUB content is XHTML -->
+    <div>{@html html}</div>
 {/await}
