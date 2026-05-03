@@ -1,4 +1,5 @@
 use crate::commands::metadata::read_epub_metadata;
+use crate::commands::spine::get_epub_content;
 use std::path::PathBuf;
 use tauri::Manager;
 
@@ -34,7 +35,10 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![read_epub_metadata])
+        .invoke_handler(tauri::generate_handler![
+            read_epub_metadata,
+            get_epub_content
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

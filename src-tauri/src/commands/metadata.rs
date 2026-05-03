@@ -1,7 +1,7 @@
-use crate::AppData;
 use rbook::Epub;
-
 use tauri::State;
+
+use crate::AppData;
 
 #[derive(serde::Serialize)]
 pub struct Metadata {
