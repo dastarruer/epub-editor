@@ -24,8 +24,10 @@
 {/await}
 
 {#await content}
-    <p>Loading content...</p>
+	<p>Loading content...</p>
 {:then html}
-    <!-- Use @html only if you trust the source, as EPUB content is XHTML -->
-    <div>{@html html}</div>
+	<!-- Use @html only if you trust the source, as EPUB content is XHTML -->
+	<div>{@html html}</div>
+{:catch error}
+	<p>Error loading content: {error}</p>
 {/await}
