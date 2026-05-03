@@ -8,6 +8,16 @@ pub struct AppData {
     source: PathBuf,
 }
 
+fn bootstrap_app() -> AppData {
+    let source = PathBuf::from(
+        std::env::args()
+            .nth(1)
+            .expect("No source file given, exiting..."),
+    );
+
+    AppData { source }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -20,13 +30,7 @@ pub fn run() {
                 )?;
             }
 
-            let source = PathBuf::from(
-                std::env::args()
-                    .nth(1)
-                    .expect("No source file given, exiting..."),
-            );
-
-            app.manage(AppData { source });
+            app.manage(bootstrap_app());
 
             Ok(())
         })
