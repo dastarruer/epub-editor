@@ -1,35 +1,11 @@
-use rbook::Epub;
+use crate::commands::metadata::read_epub_metadata;
 use std::path::PathBuf;
 use tauri::Manager;
-use tauri::State;
 
-struct AppData {
+pub mod commands;
+
+pub struct AppData {
     source: PathBuf,
-}
-
-#[derive(serde::Serialize)]
-struct Metadata {
-    title: Option<String>,
-    year: Option<i16>,
-    creators: Vec<String>,
-}
-
-impl From<Epub> for Metadata {
-    fn from(value: Epub) -> Self {
-        let title = value.metadata().title().map(|t| t.value().to_string());
-        let year = value.metadata().published().map(|y| y.date().year());
-        let creators = value
-            .metadata()
-            .creators()
-            .map(|c| c.value().to_string())
-            .collect();
-
-        Self {
-            title,
-            year,
-            creators,
-        }
-    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -57,19 +33,4 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![read_epub_metadata])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[tauri::command]
-async fn read_epub_metadata(state: State<'_, AppData>) -> Result<Metadata, String> {
-    let source = &state.source;
-
-    // Skip manifest and spine, since we just want metadata right now
-    let epub = Epub::options()
-        .skip_toc(true)
-        .skip_manifest(true)
-        .skip_spine(true)
-        .open(source)
-        .map_err(|e| e.to_string())?;
-
-    Ok(epub.into())
 }
