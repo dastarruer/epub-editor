@@ -24,3 +24,5 @@ log = "0.4"
 tauri = { version = "2.9.5", features = ["config-toml"] }
 tauri-plugin-log = "2"
 rbook = "0.7.6"
+http = "1.4.0"
+mime = "0.3.17"
