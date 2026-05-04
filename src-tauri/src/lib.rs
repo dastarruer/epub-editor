@@ -1,5 +1,5 @@
+use crate::commands::content::get_epub_content;
 use crate::commands::metadata::read_epub_metadata;
-use crate::commands::spine::get_epub_content;
 use std::path::PathBuf;
 use tauri::Manager;
 
