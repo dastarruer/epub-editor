@@ -1,6 +1,8 @@
 use crate::commands::content::get_epub_content;
 use crate::commands::metadata::read_epub_metadata;
+use commands::content::get_resource;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tauri::Manager;
 
 pub mod commands;
@@ -21,8 +23,11 @@ fn bootstrap_app() -> AppData {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let app_data = Arc::new(bootstrap_app());
+    let protocol_data = app_data.clone(); // Create new copy to be used for epub uri scheme protocol
+
     tauri::Builder::default()
-        .setup(|app| {
+        .setup(move |app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
@@ -31,9 +36,22 @@ pub fn run() {
                 )?;
             }
 
-            app.manage(bootstrap_app());
+            app.manage(app_data);
 
             Ok(())
+        })
+        .register_uri_scheme_protocol("epub", move |_ctx, request| {
+            let path = request.uri().path();
+
+            if let Ok(data) = get_resource(&protocol_data.source, path) {
+                http::Response::builder().body(data).unwrap()
+            } else {
+                http::Response::builder()
+                    .status(http::StatusCode::BAD_REQUEST)
+                    .header(http::header::CONTENT_TYPE, mime::TEXT_PLAIN.essence_str())
+                    .body("failed to read file".as_bytes().to_vec())
+                    .unwrap()
+            }
         })
         .invoke_handler(tauri::generate_handler![
             read_epub_metadata,
