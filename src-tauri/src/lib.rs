@@ -43,8 +43,14 @@ pub fn run() {
         .register_uri_scheme_protocol("epub", move |_ctx, request| {
             let path = request.uri().path();
 
-            if let Ok(data) = get_resource(&protocol_data.source, path) {
-                http::Response::builder().body(data).unwrap()
+            if let Ok(resource) = get_resource(&protocol_data.source, path) {
+                let data = resource.bytes().to_owned();
+                let content_type = resource.content_type();
+
+                http::Response::builder()
+                    .header(http::header::CONTENT_TYPE, content_type)
+                    .body(data)
+                    .unwrap()
             } else {
                 http::Response::builder()
                     .status(http::StatusCode::BAD_REQUEST)

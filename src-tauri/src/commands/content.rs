@@ -7,6 +7,28 @@ use xml::{EventReader, EventWriter};
 
 use crate::AppData;
 
+pub(crate) struct Resource {
+    bytes: Vec<u8>,
+    content_type: String,
+}
+
+impl Resource {
+    pub(crate) fn new(bytes: Vec<u8>, content_type: String) -> Self {
+        Self {
+            bytes,
+            content_type,
+        }
+    }
+
+    pub(crate) fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    pub(crate) fn content_type(&self) -> &str {
+        &self.content_type
+    }
+}
+
 #[tauri::command]
 pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String> {
     let source = &state.source;
@@ -84,7 +106,7 @@ fn inject_resource_urls(content: &str) -> String {
     String::from_utf8(sink).expect("EPUB should contain valid UTF-8.")
 }
 
-pub fn get_resource(epub_source: &PathBuf, path: &str) -> Result<Vec<u8>, Box<dyn Error>> {
+pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> Result<Resource, Box<dyn Error>> {
     let epub = Epub::open(epub_source).map_err(|e| e.to_string())?;
 
     let resource = epub
@@ -95,5 +117,7 @@ pub fn get_resource(epub_source: &PathBuf, path: &str) -> Result<Vec<u8>, Box<dy
 
     let resource_bytes = resource.read_bytes()?;
 
-    Ok(resource_bytes)
+    let content_type = resource.media_type();
+
+    Ok(Resource::new(resource_bytes, content_type.to_string()))
 }
