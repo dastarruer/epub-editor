@@ -26,3 +26,6 @@ tauri-plugin-log = "2"
 rbook = "0.7.6"
 http = "1.4.0"
 mime = "0.3.17"
+
+[dev-dependencies]
+pretty_assertions = "1"
