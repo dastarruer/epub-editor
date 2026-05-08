@@ -118,7 +118,6 @@ fn normalize_file_path(path: String, current_file_path: &str) -> String {
 pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> Result<Resource, Box<dyn Error>> {
     let epub = Epub::open(epub_source).map_err(|e| e.to_string())?;
 
-    let path = path.trim_start_matches('/');
     let resource = epub
         .manifest()
         .iter()
