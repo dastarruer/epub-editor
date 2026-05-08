@@ -26,6 +26,8 @@ tauri-plugin-log = "2"
 rbook = "0.7.6"
 http = "1.4.0"
 mime = "0.3.17"
+percent-encoding = "2.3.2"
+regex = "1.12.3"
 
 [dev-dependencies]
 pretty_assertions = "1"
