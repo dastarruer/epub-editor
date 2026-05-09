@@ -3,6 +3,28 @@ use tauri::State;
 
 use crate::AppData;
 
+pub(crate) struct Resource {
+    bytes: Vec<u8>,
+    content_type: String,
+}
+
+impl Resource {
+    pub(crate) fn new(bytes: Vec<u8>, content_type: String) -> Self {
+        Self {
+            bytes,
+            content_type,
+        }
+    }
+
+    pub(crate) fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    pub(crate) fn content_type(&self) -> &str {
+        &self.content_type
+    }
+}
+
 #[tauri::command]
 pub fn get_epub_content(state: State<'_, AppData>) -> Result<String, String> {
     let source = &state.source;
