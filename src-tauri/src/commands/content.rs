@@ -1,11 +1,14 @@
 use crate::AppData;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, CONTROLS};
 use rbook::Epub;
+use regex::Regex;
 use std::path::Path;
+use std::sync::{Arc, LazyLock};
 use std::{error::Error, path::PathBuf};
 use tauri::State;
 
 const PATH_CHARS: &AsciiSet = &CONTROLS.add(b' ').add(b'#').add(b'%');
+static SRC_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"src="([^"]*)""#).unwrap());
 
 pub(crate) struct Resource {
     bytes: Vec<u8>,
@@ -30,7 +33,7 @@ impl Resource {
 }
 
 #[tauri::command]
-pub fn get_epub_content(state: State<'_, AppData>) -> Result<String, String> {
+pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String> {
     let source = &state.source;
 
     let epub = Epub::open(source).map_err(|e| e.to_string())?;
@@ -46,15 +49,43 @@ pub fn get_epub_content(state: State<'_, AppData>) -> Result<String, String> {
         // Cross-reference the manifest to get the .xhtml file of the current
         // entry
         if let Some(resource) = epub.manifest().by_id(id) {
+            let href = resource.href().as_str();
             let cur_content = epub
                 .read_resource_str(resource)
                 .map_err(|e| e.to_string())?;
 
-            content += &cur_content;
+            content += &inject_resource_urls(cur_content, href);
         }
     }
 
     Ok(content)
+}
+
+fn inject_resource_urls(content: String, current_file_path: &str) -> String {
+    // E.g. an <img src="images/image.png"> tag inside /OEBPS/Text/chapter.xhtml will be transformed into <img src="epub://localhost/OEBPS/images/image.png">
+    SRC_REGEX
+        .replace_all(&content, |caps: &regex::Captures| {
+            let file_path = String::from(&caps[1]);
+            let final_src = if is_local_resource(&file_path) {
+                format!(
+                    "epub://localhost{}",
+                    normalize_file_path(file_path, current_file_path)
+                )
+            } else {
+                file_path
+            };
+
+            format!(r#"src="epub://localhost{final_src}""#)
+        })
+        .into_owned()
+}
+
+fn is_local_resource(src: &str) -> bool {
+    !(src.starts_with("http://")
+        || src.starts_with("https://")
+        || src.starts_with("data:")
+        || src.starts_with("epub://")
+        || src.starts_with('#'))
 }
 
 // To derive file paths, this should be useful: https://www.w3.org/TR/epub-33/#sec-container-iri
@@ -92,8 +123,8 @@ pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> Result<Resource
         .manifest()
         .iter()
         .find(|entry| {
-            let href = utf8_percent_encode(entry.href().as_str(), PATH_CHARS).to_string();
-            href.contains(path)
+            let href = entry.href().as_str();
+            href == path
         })
         .ok_or_else(|| format!("Resource not found at {path}"))?;
 
@@ -193,5 +224,59 @@ mod tests {
             let expected_path = "/fonts/arial.ttf";
             assert_eq!(expected_path, normalize_file_path(path, current_file_path));
         }
+    }
+
+    #[test]
+    fn test_inject_urls() {
+        let current_file_path = "/OEBPS/cover.xhtml";
+
+        // Taken from No Longer Human:
+        let original_xhtml = String::from(
+            r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+              "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head>
+          		<title>cover</title>
+                <meta content="urn:uuid:c8e95494-7ba0-4c86-b3c0-b58f050b7d2f" name="Adept.expected.resource"/>
+           	</head>
+           	<body>
+          		<div style="text-align:center;">
+         			<img alt="cover.jpg" src="image/cover.jpg" style="max-width:100%;"/>
+          		</div>
+                <div style="float: none; margin: 10px 0px 10px 0px; text-align: center;"><p><a href="https://oceanofpdf.com"><i>OceanofPDF.com</i></a></p>
+                </div>
+            </body>
+            </html>
+        "#,
+        );
+
+        // Only difference here is that the img src has the custom URL
+        let expected_xhtml = r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+              "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head>
+          		<title>cover</title>
+                <meta content="urn:uuid:c8e95494-7ba0-4c86-b3c0-b58f050b7d2f" name="Adept.expected.resource"/>
+           	</head>
+           	<body>
+          		<div style="text-align:center;">
+         			<img alt="cover.jpg" src="epub://localhost/OEBPS/image/cover.jpg" style="max-width:100%;"/>
+          		</div>
+                <div style="float: none; margin: 10px 0px 10px 0px; text-align: center;"><p><a href="https://oceanofpdf.com"><i>OceanofPDF.com</i></a></p>
+                </div>
+            </body>
+            </html>
+        "#;
+
+        let modified_xhtml = inject_resource_urls(original_xhtml, current_file_path);
+
+        eprintln!("{modified_xhtml}");
+        assert_eq!(modified_xhtml, expected_xhtml);
     }
 }
