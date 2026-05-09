@@ -28,6 +28,7 @@ http = "1.4.0"
 mime = "0.3.17"
 percent-encoding = "2.3.2"
 regex = "1.12.3"
+anyhow = "1.0.102"
 
 [dev-dependencies]
 pretty_assertions = "1"
