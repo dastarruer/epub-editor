@@ -36,15 +36,56 @@ impl Resource {
     }
 }
 
+/// Struct to inject custom `epub://localhost` URLS into XHTML EPUB content.
+/// This allows the frontend to easily fetch resources from within the
+/// container.
+///
+/// To inject XHTML content, see [`UrlInjector::inject_resource_urls`].
 struct UrlInjector<'a> {
     current_file_path: &'a str,
 }
 
 impl<'a> UrlInjector<'a> {
+    /// Create a new `UrlInjector`.
+    ///
+    /// # Arguments
+    /// * `current_file_path` - The absolute path to the current XHTML file within the container.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// let injector = UrlInjector::new("/OEBPS/chap001.xhtml");
+    /// ```
     fn new(current_file_path: &'a str) -> Self {
         UrlInjector { current_file_path }
     }
 
+    /// Inject custom `epub://localhost` URLs into XHTML EPUB content.
+    /// This allows the frontend to easily fetch resources from within the
+    /// container.
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - The XHTML content to inject.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// let current_file_path = "/OEBPS/chap001.xhtml";
+    /// let injector = UrlInjector::new(current_file_path);
+    ///
+    /// let xhtml = r#"
+    ///    <img src="images/cover.png">
+    ///    <img src="/image.png">
+    ///    <img src="../person.jpg">
+    /// "#;
+    ///
+    /// let expected_xhtml = r#"
+    ///     <img src="epub://localhost/OEBPS/images/cover.png">
+    ///     <img src="epub://localhost/image.png">
+    ///     <img src="epub://localhost/person.jpg">
+    /// "#;
+    ///
+    /// assert_eq!(injector.inject_resource_urls(xhtml), expected_xhtml);
+    /// ```
     fn inject_resource_urls(&self, content: String) -> String {
         // E.g. an <img src="images/image.png"> tag inside /OEBPS/Text/chapter.xhtml will be transformed into <img src="epub://localhost/OEBPS/images/image.png">
         SRC_REGEX
@@ -61,6 +102,30 @@ impl<'a> UrlInjector<'a> {
             .into_owned()
     }
 
+    /// Convert a relative path within the container to an absolute path, and
+    /// percent-encode the path.
+    ///
+    /// # Arguments
+    /// * `path` - The relative path to be normalized
+    ///
+    /// # Examples
+    /// ```ignore
+    /// let current_file_path = "/OEBPS/chap001.xhtml";
+    /// let injector = UrlInjector::new(current_file_path);
+    ///
+    /// let relative_path = "images/image.png";
+    /// assert_eq!(injector.normalize_file_path(relative_path), "/OEBPS/images/image.png");
+    ///
+    ///
+    /// let root_path = "/image.png";
+    /// assert_eq!(injector.normalize_file_path(root_path), "/image.png");
+    ///
+    /// let parent_path = "../image.png";
+    /// assert_eq!(injector.normalize_file_path(parent_path), "/OEBPS/image.png");
+    ///
+    /// let percent_encoded_path = "../image .png";
+    /// assert_eq!(injector.normalize_file_path(percent_encoded_path), "/OEBPS/image%20.png");
+    /// ```
     fn normalize_file_path(&self, path: String) -> String {
         // In case an EPUB passes a percent-encoded path
         let decoded = percent_decode_str(&path).decode_utf8_lossy();
