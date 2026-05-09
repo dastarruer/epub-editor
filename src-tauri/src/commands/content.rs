@@ -25,18 +25,18 @@ impl Resource {
         }
     }
 
-    /// Return the raw bytes of the resource to be used in an HTTP response.
+    /// Returns the raw bytes of the resource to be used in an HTTP response.
     pub(crate) fn bytes(&self) -> &[u8] {
         &self.bytes
     }
 
-    /// Return the content-type of the resource to be used in an HTTP response.
+    /// Returns the content-type of the resource to be used in an HTTP response.
     pub(crate) fn content_type(&self) -> &str {
         &self.content_type
     }
 }
 
-/// Struct to inject custom `epub://localhost` URLS into XHTML EPUB content.
+/// Struct to inject custom `epub://localhost` URLs into XHTML EPUB content.
 /// This allows the frontend to easily fetch resources from within the
 /// container.
 ///
@@ -46,7 +46,7 @@ struct UrlInjector<'a> {
 }
 
 impl<'a> UrlInjector<'a> {
-    /// Create a new `UrlInjector`.
+    /// Creates a new `UrlInjector`.
     ///
     /// # Arguments
     /// * `current_file_path` - The absolute path to the current XHTML file within the container.
@@ -59,7 +59,7 @@ impl<'a> UrlInjector<'a> {
         UrlInjector { current_file_path }
     }
 
-    /// Inject custom `epub://localhost` URLs into XHTML EPUB content.
+    /// Injects custom `epub://localhost` URLs into XHTML EPUB content.
     /// This allows the frontend to easily fetch resources from within the
     /// container.
     ///
@@ -102,7 +102,7 @@ impl<'a> UrlInjector<'a> {
             .into_owned()
     }
 
-    /// Convert a relative path within the container to an absolute path, and
+    /// Converts a relative path within the container to an absolute path, and
     /// percent-encode the path.
     ///
     /// # Arguments
@@ -167,7 +167,7 @@ pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String
     get_epub_content_inner(source).map_err(|e| e.to_string())
 }
 
-/// Extract all XHTML content from an EPUB in canonical reading order.
+/// Extracts all XHTML content from an EPUB in canonical reading order.
 ///
 /// # Arguments
 ///
@@ -205,7 +205,7 @@ fn get_epub_content_inner(source: &PathBuf) -> anyhow::Result<String> {
     Ok(content)
 }
 
-/// Fetch an EPUB resource, given its absolute path within the container.
+/// Fetches an EPUB resource, given its absolute path within the container.
 ///
 /// # Arguments
 ///
