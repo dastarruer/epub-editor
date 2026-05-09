@@ -128,6 +128,24 @@ fn get_epub_content_inner(source: &PathBuf) -> anyhow::Result<String> {
     Ok(content)
 }
 
+/// Fetch an EPUB resource, given its absolute path within the container.
+///
+/// # Arguments
+///
+/// * `epub_source` - The path to the EPUB file to be read from.
+/// * `path` - The absolute path of the resource within the container, e.g. `/OEBPS/images/cover.png`
+///
+/// # Examples
+/// ```ignore
+/// let resource = get_resource(&PathBuf::from("./test.epub"), "/OEBPS/images/cover.png").unwrap();
+/// println!("{}", resource.content_type()); // "image/png"
+/// ```
+///
+/// # Errors
+///
+/// Returns an error if:
+/// * EPUB does not exist at `epub_source`
+/// * Resource does not exist at `path`
 pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> anyhow::Result<Resource> {
     let epub = Epub::open(epub_source)?;
 
