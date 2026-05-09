@@ -10,6 +10,8 @@ use tauri::State;
 const PATH_CHARS: &AsciiSet = &CONTROLS.add(b' ').add(b'#').add(b'%');
 static SRC_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"src="([^"]*)""#).unwrap());
 
+/// Stores an EPUB resource's bytes and content-type, both of which are needed
+/// to construct an HTTP response to serve the resource to the frontend.
 pub(crate) struct Resource {
     bytes: Vec<u8>,
     content_type: String,
@@ -23,10 +25,12 @@ impl Resource {
         }
     }
 
+    /// Return the raw bytes of the resource to be used in an HTTP response.
     pub(crate) fn bytes(&self) -> &[u8] {
         &self.bytes
     }
 
+    /// Return the content-type of the resource to be used in an HTTP response.
     pub(crate) fn content_type(&self) -> &str {
         &self.content_type
     }
