@@ -4,6 +4,7 @@ use tauri::State;
 
 use crate::AppData;
 
+/// Store metadata of an EPUB.
 #[derive(serde::Serialize)]
 pub struct Metadata {
     title: Option<String>,
@@ -37,6 +38,17 @@ pub async fn read_epub_metadata(state: State<'_, Arc<AppData>>) -> Result<Metada
         .map_err(|e| e.to_string())
 }
 
+/// Extract metadata from EPUB.
+///
+/// # Arguments
+///
+/// * `source` - Path to EPUB
+///
+/// # Errors
+///
+/// Returns an error if:
+/// * EPUB does not exist at `source`.
+/// * EPUB at `source` is malformed.
 async fn read_epub_metadata_inner(source: &PathBuf) -> anyhow::Result<Metadata> {
     // Skip manifest and spine, since we just want metadata right now
     let epub = Epub::options()
