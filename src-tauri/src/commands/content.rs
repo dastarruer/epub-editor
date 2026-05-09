@@ -1,5 +1,5 @@
 use crate::AppData;
-use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{AsciiSet, CONTROLS, percent_decode_str, utf8_percent_encode};
 use rbook::Epub;
 use regex::Regex;
 use std::path::Path;
@@ -134,7 +134,9 @@ impl<'a> UrlInjector<'a> {
         let path = Path::new(decoded.as_ref());
 
         let mut normalized_path = if !path.starts_with("/") {
-            let current_dir = current_file_path.parent().unwrap_or_else(|| Path::new("/"));
+            let current_dir = current_file_path
+                .parent()
+                .unwrap_or_else(|| Path::new("/"));
             PathBuf::new().join(current_dir)
         } else {
             PathBuf::new()

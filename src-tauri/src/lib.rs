@@ -63,7 +63,11 @@ pub fn run() {
                 http::Response::builder()
                     .status(http::StatusCode::BAD_REQUEST)
                     .header(http::header::CONTENT_TYPE, mime::TEXT_PLAIN.essence_str())
-                    .body("failed to read file".as_bytes().to_vec())
+                    .body(
+                        "failed to read file"
+                            .as_bytes()
+                            .to_vec(),
+                    )
                     .unwrap()
             }
         })

@@ -14,8 +14,14 @@ pub struct Metadata {
 
 impl From<Epub> for Metadata {
     fn from(value: Epub) -> Self {
-        let title = value.metadata().title().map(|t| t.value().to_string());
-        let year = value.metadata().published().map(|y| y.date().year());
+        let title = value
+            .metadata()
+            .title()
+            .map(|t| t.value().to_string());
+        let year = value
+            .metadata()
+            .published()
+            .map(|y| y.date().year());
         let creators = value
             .metadata()
             .creators()
