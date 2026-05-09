@@ -167,6 +167,18 @@ pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String
     get_epub_content_inner(source).map_err(|e| e.to_string())
 }
 
+/// Extract all XHTML content from an EPUB in canonical reading order.
+///
+/// # Arguments
+///
+/// * `source` - Path to EPUB
+///
+/// # Errors
+///
+/// Returns an error if:
+/// * EPUB does not exist at `source`.
+/// * EPUB at `source` is malformed.
+/// * A resource cannot be read for some reason.
 fn get_epub_content_inner(source: &PathBuf) -> anyhow::Result<String> {
     let epub = Epub::open(source)?;
 
