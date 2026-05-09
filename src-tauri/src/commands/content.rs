@@ -3,8 +3,8 @@ use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, CONTRO
 use rbook::Epub;
 use regex::Regex;
 use std::path::Path;
+use std::path::PathBuf;
 use std::sync::{Arc, LazyLock};
-use std::{error::Error, path::PathBuf};
 use tauri::State;
 
 const PATH_CHARS: &AsciiSet = &CONTROLS.add(b' ').add(b'#').add(b'%');
@@ -95,8 +95,11 @@ impl<'a> UrlInjector<'a> {
 #[tauri::command]
 pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String> {
     let source = &state.source;
+    get_epub_content_inner(source).map_err(|e| e.to_string())
+}
 
-    let epub = Epub::open(source).map_err(|e| e.to_string())?;
+fn get_epub_content_inner(source: &PathBuf) -> anyhow::Result<String> {
+    let epub = Epub::open(source)?;
 
     let mut content = String::new();
 
@@ -112,9 +115,7 @@ pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String
             let href = resource.href().as_str();
             let injector = UrlInjector::new(href);
 
-            let cur_content = epub
-                .read_resource_str(resource)
-                .map_err(|e| e.to_string())?;
+            let cur_content = epub.read_resource_str(resource)?;
 
             content += &injector.inject_resource_urls(cur_content);
         }
@@ -123,8 +124,8 @@ pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String
     Ok(content)
 }
 
-pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> Result<Resource, Box<dyn Error>> {
-    let epub = Epub::open(epub_source).map_err(|e| e.to_string())?;
+pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> anyhow::Result<Resource> {
+    let epub = Epub::open(epub_source)?;
 
     let resource = epub
         .manifest()
@@ -133,7 +134,7 @@ pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> Result<Resource
             let href = entry.href().as_str();
             href == path
         })
-        .ok_or_else(|| format!("Resource not found at {path}"))?;
+        .ok_or_else(|| anyhow::anyhow!("Resource not found at {path}"))?;
 
     let resource_bytes = resource.read_bytes()?;
 

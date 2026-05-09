@@ -1,5 +1,5 @@
 use rbook::Epub;
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 use tauri::State;
 
 use crate::AppData;
@@ -32,14 +32,18 @@ impl From<Epub> for Metadata {
 #[tauri::command]
 pub async fn read_epub_metadata(state: State<'_, Arc<AppData>>) -> Result<Metadata, String> {
     let source = &state.source;
+    read_epub_metadata_inner(source)
+        .await
+        .map_err(|e| e.to_string())
+}
 
+async fn read_epub_metadata_inner(source: &PathBuf) -> anyhow::Result<Metadata> {
     // Skip manifest and spine, since we just want metadata right now
     let epub = Epub::options()
         .skip_toc(true)
         .skip_manifest(true)
         .skip_spine(true)
-        .open(source)
-        .map_err(|e| e.to_string())?;
+        .open(source)?;
 
     Ok(epub.into())
 }
