@@ -10,6 +10,8 @@ use tauri::State;
 const PATH_CHARS: &AsciiSet = &CONTROLS.add(b' ').add(b'#').add(b'%');
 static SRC_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"src="([^"]*)""#).unwrap());
 
+/// Stores an EPUB resource's bytes and content-type, both of which are needed
+/// to construct an HTTP response to serve the resource to the frontend.
 pub(crate) struct Resource {
     bytes: Vec<u8>,
     content_type: String,
@@ -23,24 +25,67 @@ impl Resource {
         }
     }
 
+    /// Returns the raw bytes of the resource to be used in an HTTP response.
     pub(crate) fn bytes(&self) -> &[u8] {
         &self.bytes
     }
 
+    /// Returns the content-type of the resource to be used in an HTTP response.
     pub(crate) fn content_type(&self) -> &str {
         &self.content_type
     }
 }
 
+/// Struct to inject custom `epub://localhost` URLs into XHTML EPUB content.
+/// This allows the frontend to easily fetch resources from within the
+/// container.
+///
+/// To inject XHTML content, see [`UrlInjector::inject_resource_urls`].
 struct UrlInjector<'a> {
     current_file_path: &'a str,
 }
 
 impl<'a> UrlInjector<'a> {
+    /// Creates a new `UrlInjector`.
+    ///
+    /// # Arguments
+    /// * `current_file_path` - The absolute path to the current XHTML file within the container.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// let injector = UrlInjector::new("/OEBPS/chap001.xhtml");
+    /// ```
     fn new(current_file_path: &'a str) -> Self {
         UrlInjector { current_file_path }
     }
 
+    /// Injects custom `epub://localhost` URLs into XHTML EPUB content.
+    /// This allows the frontend to easily fetch resources from within the
+    /// container.
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - The XHTML content to inject.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// let current_file_path = "/OEBPS/chap001.xhtml";
+    /// let injector = UrlInjector::new(current_file_path);
+    ///
+    /// let xhtml = r#"
+    ///    <img src="images/cover.png">
+    ///    <img src="/image.png">
+    ///    <img src="../person.jpg">
+    /// "#;
+    ///
+    /// let expected_xhtml = r#"
+    ///     <img src="epub://localhost/OEBPS/images/cover.png">
+    ///     <img src="epub://localhost/image.png">
+    ///     <img src="epub://localhost/person.jpg">
+    /// "#;
+    ///
+    /// assert_eq!(injector.inject_resource_urls(xhtml), expected_xhtml);
+    /// ```
     fn inject_resource_urls(&self, content: String) -> String {
         // E.g. an <img src="images/image.png"> tag inside /OEBPS/Text/chapter.xhtml will be transformed into <img src="epub://localhost/OEBPS/images/image.png">
         SRC_REGEX
@@ -57,6 +102,30 @@ impl<'a> UrlInjector<'a> {
             .into_owned()
     }
 
+    /// Converts a relative path within the container to an absolute path, and
+    /// percent-encode the path.
+    ///
+    /// # Arguments
+    /// * `path` - The relative path to be normalized
+    ///
+    /// # Examples
+    /// ```ignore
+    /// let current_file_path = "/OEBPS/chap001.xhtml";
+    /// let injector = UrlInjector::new(current_file_path);
+    ///
+    /// let relative_path = "images/image.png";
+    /// assert_eq!(injector.normalize_file_path(relative_path), "/OEBPS/images/image.png");
+    ///
+    ///
+    /// let root_path = "/image.png";
+    /// assert_eq!(injector.normalize_file_path(root_path), "/image.png");
+    ///
+    /// let parent_path = "../image.png";
+    /// assert_eq!(injector.normalize_file_path(parent_path), "/OEBPS/image.png");
+    ///
+    /// let percent_encoded_path = "../image .png";
+    /// assert_eq!(injector.normalize_file_path(percent_encoded_path), "/OEBPS/image%20.png");
+    /// ```
     fn normalize_file_path(&self, path: String) -> String {
         // In case an EPUB passes a percent-encoded path
         let decoded = percent_decode_str(&path).decode_utf8_lossy();
@@ -98,6 +167,18 @@ pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String
     get_epub_content_inner(source).map_err(|e| e.to_string())
 }
 
+/// Extracts all XHTML content from an EPUB in canonical reading order.
+///
+/// # Arguments
+///
+/// * `source` - Path to EPUB
+///
+/// # Errors
+///
+/// Returns an error if:
+/// * EPUB does not exist at `source`.
+/// * EPUB at `source` is malformed.
+/// * A resource cannot be read for some reason.
 fn get_epub_content_inner(source: &PathBuf) -> anyhow::Result<String> {
     let epub = Epub::open(source)?;
 
@@ -124,6 +205,24 @@ fn get_epub_content_inner(source: &PathBuf) -> anyhow::Result<String> {
     Ok(content)
 }
 
+/// Fetches an EPUB resource, given its absolute path within the container.
+///
+/// # Arguments
+///
+/// * `epub_source` - The path to the EPUB file to be read from.
+/// * `path` - The absolute path of the resource within the container, e.g. `/OEBPS/images/cover.png`
+///
+/// # Examples
+/// ```ignore
+/// let resource = get_resource(&PathBuf::from("./test.epub"), "/OEBPS/images/cover.png").unwrap();
+/// println!("{}", resource.content_type()); // "image/png"
+/// ```
+///
+/// # Errors
+///
+/// Returns an error if:
+/// * EPUB does not exist at `epub_source`
+/// * Resource does not exist at `path`
 pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> anyhow::Result<Resource> {
     let epub = Epub::open(epub_source)?;
 
