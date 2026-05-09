@@ -75,7 +75,7 @@ fn inject_resource_urls(content: String, current_file_path: &str) -> String {
                 file_path
             };
 
-            format!(r#"src="epub://localhost{final_src}""#)
+            format!(r#"src="{final_src}""#)
         })
         .into_owned()
 }
