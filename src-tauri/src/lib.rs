@@ -1,7 +1,10 @@
 use crate::commands::content::get_epub_content;
+use crate::commands::metadata::Metadata;
 use crate::commands::metadata::read_epub_metadata;
 use commands::content::get_resource;
 use http::HeaderValue;
+use rbook::Epub;
+use rbook::ebook::errors::EbookError;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::Manager;
@@ -9,17 +12,59 @@ use tauri::Manager;
 pub mod commands;
 
 pub struct AppData {
-    source: PathBuf,
+    epub: EpubWrapper,
 }
 
+/// Stores data of the EPUB currently being edited.
+pub(crate) struct EpubWrapper {
+    epub: Epub,
+    metadata: Metadata,
+}
+
+impl EpubWrapper {
+    pub(crate) fn new(epub: Epub, metadata: Metadata) -> Self {
+        Self { epub, metadata }
+    }
+}
+
+/// # Panics
+///
+/// * If no source file is provided.
+/// * If the path to the source file is invalid.
+/// * If the EPUB at the provided path cannot be opened for some reason.
 fn bootstrap_app() -> AppData {
     let source = PathBuf::from(
         std::env::args()
             .nth(1)
             .expect("No source file given, exiting..."),
-    );
+    )
+    .canonicalize()
+    .unwrap_or_else(|e| {
+        let err_msg = format!("Source file path is invalid: {e}");
+        panic!("{}", err_msg);
+    });
 
-    AppData { source }
+    let epub = match Epub::open(&source) {
+        Ok(epub) => epub,
+        Err(EbookError::Archive(e)) => {
+            let err_msg = format!("Missing or invalid EPUB at {source:?}.\nError: {e}");
+            panic!("{}", err_msg);
+        }
+        Err(EbookError::Format(e)) => {
+            let err_msg = format!("Malformed EPUB at {source:?}.\nError: {e}");
+            panic!("{}", err_msg);
+        }
+        Err(e) => {
+            let err_msg = format!("Error opening EPUB at {source:?}.\nError: {e}");
+            panic!("{}", err_msg);
+        }
+    };
+
+    let metadata = Metadata::from(&epub);
+
+    let epub = EpubWrapper::new(epub, metadata);
+
+    AppData { epub }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -44,7 +89,7 @@ pub fn run() {
         .register_uri_scheme_protocol("epub", move |_ctx, request| {
             let path = request.uri().path();
 
-            if let Ok(resource) = get_resource(&protocol_data.source, path) {
+            if let Ok(resource) = get_resource(&protocol_data.epub, path) {
                 let data = resource.bytes().to_owned();
                 let content_type = resource.content_type();
 

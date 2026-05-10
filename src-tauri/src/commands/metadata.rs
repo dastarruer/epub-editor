@@ -1,19 +1,19 @@
 use rbook::Epub;
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 use tauri::State;
 
 use crate::AppData;
 
 /// Stores metadata of an EPUB.
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Clone)]
 pub struct Metadata {
     title: Option<String>,
     year: Option<i16>,
     creators: Vec<String>,
 }
 
-impl From<Epub> for Metadata {
-    fn from(value: Epub) -> Self {
+impl From<&Epub> for Metadata {
+    fn from(value: &Epub) -> Self {
         let title = value
             .metadata()
             .title()
@@ -37,31 +37,6 @@ impl From<Epub> for Metadata {
 }
 
 #[tauri::command]
-pub async fn read_epub_metadata(state: State<'_, Arc<AppData>>) -> Result<Metadata, String> {
-    let source = &state.source;
-    read_epub_metadata_inner(source)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-/// Extracts metadata from EPUB.
-///
-/// # Arguments
-///
-/// * `source` - Path to EPUB
-///
-/// # Errors
-///
-/// Returns an error if:
-/// * EPUB does not exist at `source`.
-/// * EPUB at `source` is malformed.
-async fn read_epub_metadata_inner(source: &PathBuf) -> anyhow::Result<Metadata> {
-    // Skip manifest and spine, since we just want metadata right now
-    let epub = Epub::options()
-        .skip_toc(true)
-        .skip_manifest(true)
-        .skip_spine(true)
-        .open(source)?;
-
-    Ok(epub.into())
+pub fn read_epub_metadata(state: State<'_, Arc<AppData>>) -> Metadata {
+    state.epub.metadata.to_owned()
 }

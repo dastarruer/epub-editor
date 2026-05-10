@@ -1,6 +1,6 @@
 use crate::AppData;
+use crate::EpubWrapper;
 use percent_encoding::{AsciiSet, CONTROLS, percent_decode_str, utf8_percent_encode};
-use rbook::Epub;
 use regex::Regex;
 use std::path::Path;
 use std::path::PathBuf;
@@ -165,25 +165,17 @@ impl<'a> UrlInjector<'a> {
 
 #[tauri::command]
 pub fn get_epub_content(state: State<'_, Arc<AppData>>) -> Result<String, String> {
-    let source = &state.source;
-    get_epub_content_inner(source).map_err(|e| e.to_string())
+    get_epub_content_inner(&state.epub).map_err(|e| e.to_string())
 }
 
 /// Extracts all XHTML content from an EPUB in canonical reading order.
 ///
-/// # Arguments
-///
-/// * `source` - Path to EPUB
-///
 /// # Errors
 ///
 /// Returns an error if:
-/// * EPUB does not exist at `source`.
-/// * EPUB at `source` is malformed.
 /// * A resource cannot be read for some reason.
-fn get_epub_content_inner(source: &PathBuf) -> anyhow::Result<String> {
-    let epub = Epub::open(source)?;
-
+fn get_epub_content_inner(epub_wrapper: &EpubWrapper) -> anyhow::Result<String> {
+    let epub = &epub_wrapper.epub;
     let mut content = String::new();
 
     // Loop through each entry in the manifest in canonical reading order
@@ -209,26 +201,16 @@ fn get_epub_content_inner(source: &PathBuf) -> anyhow::Result<String> {
 
 /// Fetches an EPUB resource, given its absolute path within the container.
 ///
-/// # Arguments
-///
-/// * `epub_source` - The path to the EPUB file to be read from.
-/// * `path` - The absolute path of the resource within the container, e.g. `/OEBPS/images/cover.png`
-///
-/// # Examples
-/// ```ignore
-/// let resource = get_resource(&PathBuf::from("./test.epub"), "/OEBPS/images/cover.png").unwrap();
-/// println!("{}", resource.content_type()); // "image/png"
-/// ```
+/// `path` should be the absolute path of the resource within the container,
+/// e.g. `/OEBPS/images/cover.png`
 ///
 /// # Errors
 ///
 /// Returns an error if:
-/// * EPUB does not exist at `epub_source`
 /// * Resource does not exist at `path`
-pub(crate) fn get_resource(epub_source: &PathBuf, path: &str) -> anyhow::Result<Resource> {
-    let epub = Epub::open(epub_source)?;
-
-    let resource = epub
+pub(crate) fn get_resource(epub_wrapper: &EpubWrapper, path: &str) -> anyhow::Result<Resource> {
+    let resource = epub_wrapper
+        .epub
         .manifest()
         .iter()
         .find(|entry| {
