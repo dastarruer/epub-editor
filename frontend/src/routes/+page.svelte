@@ -1,4 +1,5 @@
 <script lang="ts">
+	import TipTap from '$lib/components/TipTap.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 
 	interface Metadata {
@@ -23,10 +24,12 @@
 	<p>Error: {error}</p>
 {/await}
 
-{#await content}
+<TipTap />
+
+<!-- {#await content}
 	<p>Loading content...</p>
 {:then html}
 	<div>{@html `<base href="epub://localhost/OEBPS/">` + html}</div>
 {:catch error}
 	<p>Error loading content: {error}</p>
-{/await}
+{/await} -->
