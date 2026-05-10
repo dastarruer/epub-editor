@@ -35,6 +35,10 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
-		"@tauri-apps/api": "^2.11.0"
+		"@tauri-apps/api": "^2.11.0",
+		"@tiptap/core": "^3.23.1",
+		"@tiptap/extension-bubble-menu": "^3.23.1",
+		"@tiptap/pm": "^3.23.1",
+		"@tiptap/starter-kit": "^3.23.1"
 	}
 }
