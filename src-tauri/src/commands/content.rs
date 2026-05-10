@@ -106,6 +106,7 @@ impl<'a> UrlInjector<'a> {
     /// percent-encode the path.
     ///
     /// # Arguments
+    ///
     /// * `path` - The relative path to be normalized
     ///
     /// # Examples
