@@ -1,27 +1,35 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Editor } from '@tiptap/core';
-	import { StarterKit } from '@tiptap/starter-kit';
+	import { Document } from '@tiptap/extension-document';
+	import { Paragraph } from '@tiptap/extension-paragraph';
+	import { Text } from '@tiptap/extension-text';
+	import { Heading } from '@tiptap/extension-heading';
+	import { Bold } from '@tiptap/extension-bold';
+	import { Italic } from '@tiptap/extension-italic';
+	import { History } from '@tiptap/extension-history';
 	import BubbleMenu from '@tiptap/extension-bubble-menu';
 
 	let bubbleMenu: HTMLElement | undefined = $state();
 	let element: HTMLElement | undefined = $state();
 	let editorState: { editor: Editor | null } = $state({ editor: null });
 
+	let { content } = $props();
+
 	onMount(() => {
 		editorState.editor = new Editor({
 			element: element,
 			extensions: [
-				StarterKit,
-				BubbleMenu.configure({
-					element: bubbleMenu
-				})
+				Document,
+				Paragraph,
+				Text,
+				Heading.configure({ levels: [1, 2, 3] }),
+				Bold,
+				Italic,
+				History,
+				BubbleMenu.configure({ element: bubbleMenu })
 			],
-			content: `
-        <h1>Hello Svelte! 🌍️ </h1>
-        <p>This editor is running in Svelte.</p>
-        <p>Select some text to see the bubble menu popping up.</p>
-      `,
+			content: content,
 			onTransaction: ({ editor }) => {
 				// Update the state signal to force a re-render
 				editorState = { editor };

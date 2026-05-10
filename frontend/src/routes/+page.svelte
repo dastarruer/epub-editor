@@ -24,12 +24,12 @@
 	<p>Error: {error}</p>
 {/await}
 
-<TipTap />
 
-<!-- {#await content}
+{#await content}
 	<p>Loading content...</p>
 {:then html}
-	<div>{@html `<base href="epub://localhost/OEBPS/">` + html}</div>
+    <TipTap content={html} />
+	<!-- <div>{@html `<base href="epub://localhost/OEBPS/">` + html}</div> -->
 {:catch error}
 	<p>Error loading content: {error}</p>
-{/await} -->
+{/await}
